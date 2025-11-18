@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -98,7 +98,6 @@ const styles = StyleSheet.create({
   numlikesContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
   itemsCountContainer: {
     alignItems: 'flex-start',

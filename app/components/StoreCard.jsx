@@ -5,8 +5,9 @@ import useSelectionStore from '../stores/useSelectionStore';
 import useCartStore from '../stores/cartStore';
 import React from 'react'
     
-const StoreCard = ({ storeName, children, onRemove }) => {
+const StoreCard = ({ storeName, children }) => {
     const { selectedStores, selectStore } = useSelectionStore();
+    const { removeFromStore } = useCartStore();
     const isSelected = selectedStores.includes(storeName);
     
     // Extract product IDs from children
@@ -32,12 +33,9 @@ const StoreCard = ({ storeName, children, onRemove }) => {
                     </View>
                 </View>
                 
-                {isSelected && onRemove && (
-                    <TouchableOpacity 
-                        style={styles.removeButton}
-                        onPress={onRemove}
-                    >
-                        <Text style={styles.removeButtonText}>Remove</Text>
+                {isSelected && (
+                    <TouchableOpacity style={styles.clearButton} onPress={() => removeFromStore(storeName)}>
+                        <Text style={styles.clearText}>Remove</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -113,8 +111,8 @@ const styles = StyleSheet.create({
 
     clearText: { 
         color: '#fff' ,
-        fontWeight: 'bold', 
-        fontSize: 16 
+        fontWeight: '500', 
+        fontSize: 14 
     },
 })
 

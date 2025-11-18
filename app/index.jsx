@@ -1,14 +1,79 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native'
 import React, { useState } from 'react'
-const { useFonts, Unna_400Regular, Unna_700Bold } = require('@expo-google-fonts/unna');
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMutation } from '@tanstack/react-query';
+const { useFonts, Unna_400Regular, Unna_700Bold } = require('@expo-google-fonts/unna');
 
 const SignInPage = () => {
+
+  const apiUrl = process.env.EXPO_API_URL || "http://localhost:3000/api";
+  const [ registerData, setRegisterData ] = useState(null);
+  const [ registerFormData, setRegisterFormData ] = useState({
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    password: "",
+    confirm_password: "",
+  });
+
+  const [ loginFormData, setLoginFormData ] = useState({
+    email: "",
+    password: "",
+  });
+
+  const registerUser = async (formData) => {
+    const response = await fetch(`${apiUrl}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    const data = await response.json();
+    setRegisterData(data);
+  }
+
+  const registerMutation = useMutation(registerUser, {
+    onSuccess: (data) => {
+      console.log('Registration successful:', data);
+    },
+    onError: (error) => {
+      console.error('Registration error:', error);
+    },
+  });
+
+  const handleSubmitRegistration = (e) => {
+    e.preventDefault();
+    registerMutation.mutate(registerFormData);
+    if (registerMutation.isSuccess) {
+      router.replace("/tabs/home");
+    }
+  }
+
+  const registerHandleChange = (fieldName, text) => {
+    setRegisterFormData({
+      ...registerFormData,
+      [fieldName]: text,
+    });
+  }
+
+  const loginHandleChange = (fieldName, text) => {
+    setLoginFormData({
+      ...loginFormData,
+      [fieldName]: text,
+    });
+  }
+
+  const samePassword = (pass, confirmPass) => {
+    return pass === confirmPass;
+  }
 
   const [activeTab, setActiveTab] = useState("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
   const [fontsLoaded] = useFonts({
     Unna_400Regular,
@@ -18,8 +83,6 @@ const SignInPage = () => {
   if(!fontsLoaded) {
     return <Text>Loading...</Text>
   }
-
-  const router = useRouter();
 
   const handleLogin = () => {
     router.replace("/tabs/home"); 
@@ -75,33 +138,45 @@ const SignInPage = () => {
                 style={styles.input}
                 placeholder="First Name"
                 placeholderTextColor="#787676"
+                value={registerFormData.first_name}
+                onChangeText={(text) => registerHandleChange('first_name', text)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Last Name"
                 placeholderTextColor="#787676"
+                value={registerFormData.last_name}
+                onChangeText={(text) => registerHandleChange('last_name', text)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Create Username"
                 placeholderTextColor="#787676"
+                value={registerFormData.username}
+                onChangeText={(text) => registerHandleChange('username', text)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Email Address"
                 placeholderTextColor="#787676"
+                value={registerFormData.email}
+                onChangeText={(text) => registerHandleChange('email', text)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Create Password"
                 placeholderTextColor="#787676"
                 secureTextEntry
+                value={registerFormData.password}
+                onChangeText={(text) => registerHandleChange('password', text)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
                 placeholderTextColor="#787676"
                 secureTextEntry
+                value={registerFormData.confirm_password}
+                onChangeText={(text) => registerHandleChange('confirm_password', text)}
               />
             </>
           )}
@@ -116,7 +191,7 @@ const SignInPage = () => {
             <View style={styles.accountTextContainer}>
               <Text style={styles.accountText}>
                 Already have an account?{' '}
-                <Text style={styles.signInLink} onPress={handleSwitchToSignIn}>
+                <Text style={styles.signInLink} onPress={handleSubmitRegistration}>
                   Sign In
                 </Text>
               </Text>

@@ -3,7 +3,6 @@ import {Star, Heart} from 'lucide-react-native'
 import {React, useState} from 'react'
 import { useRouter } from "expo-router";
 import useIconStore from '../stores/iconStore';
-import { store } from 'expo-router/build/global-state/router-store';
 
 const ProductCard = ({
                       id,
