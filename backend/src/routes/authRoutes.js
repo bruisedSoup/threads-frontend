@@ -12,8 +12,8 @@ const generateToken = (user_id) => {
 // User Registration Route
 router.post("/register", async (req, res) => {
     try {
-        const { first_name, last_name, username, email, password } = req.body;
-        if (!first_name || !last_name || !username || !email || !password) {
+        const { first_name, last_name, username, email, password, confirm_password } = req.body;
+        if (!first_name || !last_name || !username || !email || !password || !confirm_password) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -25,6 +25,15 @@ router.post("/register", async (req, res) => {
             return res.status(400).json({ message: "Username must be at least 3 characters long" });
         }
 
+        if (password !== confirm_password) {
+            return res.status(400).json({ message: "Passwords do not match" });
+        }
+
+        const existingUser = await User.findOne({username});
+        if (existingUser) {
+            return res.status(400).json({ message: "Username already taken" });
+        }
+        
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
         if (!emailRegex.test(email)) {
@@ -51,6 +60,7 @@ router.post("/register", async (req, res) => {
         const token = generateToken(user._id);
 
         res.status(201).json({   
+            success: true,
             message: "User registered successfully", 
             token,
             user: {

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert } from 'react-native'
 import React, { useState } from 'react'
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,9 +7,10 @@ const { useFonts, Unna_400Regular, Unna_700Bold } = require('@expo-google-fonts/
 
 const SignInPage = () => {
 
-  const apiUrl = process.env.EXPO_API_URL || "http://localhost:3000/api";
+  //Backend API URL
+  const apiUrl = process.env.EXPO_API_URL || "http://10.0.2.2:3000/api";
   const [ registerData, setRegisterData ] = useState(null);
-  const [ registerFormData, setRegisterFormData ] = useState({
+  const [ registerFormData, setRegisterFormData ] = useState({ //State to hold registration form data
     first_name: "",
     last_name: "",
     username: "",
@@ -23,40 +24,77 @@ const SignInPage = () => {
     password: "",
   });
 
-  const registerUser = async (formData) => {
+
+    /*
+    registerUser: Function to handle user registration by sending form data to the backend API.
+    **/
+    const registerUser = async (formData) => { //We're using async/await to handle the asynchronous nature of network requests.
     const response = await fetch(`${apiUrl}/auth/register`, {
+      method: 'POST', //Specifying the HTTP method as POST to send data to the server.
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData), //Converting the form data to a JSON string to send in the request body.
+    });
+    const data = await response.json(); //Parsing the JSON response from the server.
+    setRegisterData(data); //Storing the response data in the registerData state variable. We can use this data to provide feedback to the user.
+    return data;
+  }
+
+  const registerMutation = useMutation({ //Using React Query's useMutation hook to manage the registration process.
+    mutationFn: registerUser, //Specifying the function to be called when the mutation is triggered.
+    onSuccess: (data) => { //Callback function to handle successful registration.
+      console.log('Registration Successful: ', data)
+      if (data && data.success) {//If the registration is successful, navigate to the home screen.
+        router.replace('/tabs/home');
+      }
+    },
+    onError: (error) => { //Callback function to handle errors during registration.
+      console.log('Registration error:', error)
+    },
+  })
+
+  const handleSubmitRegistration = (e) => { //Function to handle form submission for registration.
+    e.preventDefault(); //Preventing the default form submission behavior. Para dili siya ma submit maskig walay sulod ang fields.
+    registerMutation.mutate(registerFormData); //Triggering the mutation with the current form data.
+  }
+
+  const registerHandleChange = (fieldName, text) => { //Function to handle changes in the registration form fields.
+    setRegisterFormData({
+      ...registerFormData, //Spreading the existing form data to retain unchanged fields.
+      [fieldName]: text, //Updating the specific field with the new value.
+    });
+  }
+
+  //Login Handlers. The process is similar to registration.
+  const loginUser = async (formData) => { 
+    const response = await fetch(`${apiUrl}/auth/login`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(formData), 
     });
     const data = await response.json();
-    setRegisterData(data);
+    return data;
   }
-
-  const registerMutation = useMutation(registerUser, {
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
     onSuccess: (data) => {
-      console.log('Registration successful:', data);
+      console.log('Login Successful: ', data)
+      if (data && data.success) {
+        router.replace('/tabs/home');
+      }
     },
     onError: (error) => {
-      console.error('Registration error:', error);
+      console.log('Login error:', error)
+      Alert.alert('Login Failed', error.message || 'An error occurred during login.');
     },
-  });
+  })
 
-  const handleSubmitRegistration = (e) => {
+  const handleSubmitLogin = (e) => {
     e.preventDefault();
-    registerMutation.mutate(registerFormData);
-    if (registerMutation.isSuccess) {
-      router.replace("/tabs/home");
-    }
-  }
-
-  const registerHandleChange = (fieldName, text) => {
-    setRegisterFormData({
-      ...registerFormData,
-      [fieldName]: text,
-    });
+    loginMutation.mutate(loginFormData);
   }
 
   const loginHandleChange = (fieldName, text) => {
@@ -66,10 +104,8 @@ const SignInPage = () => {
     });
   }
 
-  const samePassword = (pass, confirmPass) => {
-    return pass === confirmPass;
-  }
 
+  //Frontend State
   const [activeTab, setActiveTab] = useState("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,10 +118,6 @@ const SignInPage = () => {
 
   if(!fontsLoaded) {
     return <Text>Loading...</Text>
-  }
-
-  const handleLogin = () => {
-    router.replace("/tabs/home"); 
   }
 
   const handleSwitchToSignIn = () => {
@@ -120,16 +152,16 @@ const SignInPage = () => {
                 style={styles.input}
                 placeholder="Email Address"
                 placeholderTextColor="#787676"
-                value={email}
-                onChangeText={setEmail}
+                value={loginFormData.email}
+                onChangeText={(text) => loginHandleChange('email', text)} //Updating the email field using the loginHandleChange function
               />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
                 placeholderTextColor="#787676"
                 secureTextEntry
-                value={password}
-                onChangeText={setPassword}
+                value={loginFormData.password}
+                onChangeText={(text) => loginHandleChange('password', text)}
               />
             </>
           ) : (
@@ -139,7 +171,7 @@ const SignInPage = () => {
                 placeholder="First Name"
                 placeholderTextColor="#787676"
                 value={registerFormData.first_name}
-                onChangeText={(text) => registerHandleChange('first_name', text)}
+                onChangeText={(text) => registerHandleChange('first_name', text)} //Updating the first name field using the registerHandleChange function
               />
               <TextInput
                 style={styles.input}
@@ -181,9 +213,9 @@ const SignInPage = () => {
             </>
           )}
         </View>
-
+          
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <TouchableOpacity style={styles.button} onPress={activeTab === "signIn" ? handleSubmitLogin : handleSubmitRegistration}>
             <Text style={styles.buttonText}>{activeTab === "signIn" ? "Sign In" : "Sign Up"}</Text>
           </TouchableOpacity>
 
@@ -191,7 +223,7 @@ const SignInPage = () => {
             <View style={styles.accountTextContainer}>
               <Text style={styles.accountText}>
                 Already have an account?{' '}
-                <Text style={styles.signInLink} onPress={handleSubmitRegistration}>
+                <Text style={styles.signInLink} onPress={() => setActiveTab("signIn")}>
                   Sign In
                 </Text>
               </Text>

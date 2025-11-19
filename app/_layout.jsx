@@ -1,10 +1,13 @@
-import { Stack } from "expo-router";
 import { useFonts } from 'expo-font';
-import { SplashScreen } from 'expo-router';
-import React from 'react';
+import { SplashScreen, Stack } from "expo-router";
+
 import { EncodeSans_400Regular } from '@expo-google-fonts/encode-sans';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 
 SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded, error] = useFonts({
@@ -22,9 +25,11 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="tabs" />
-    </Stack>
+    <QueryClientProvider client={queryClient}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="tabs" />
+      </Stack>
+    </QueryClientProvider>
   );
 }
